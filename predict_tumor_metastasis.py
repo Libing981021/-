@@ -26,6 +26,7 @@ encoded_features = {
 }
 
 # Streamlit UI
+st.set_page_config(page_title="Distant Metastasis Prediction", page_icon=":guardsman:", layout="wide")
 st.title("Predicting Distant Metastasis in Colorectal Cancer Using a Machine Learning Model")
 st.write("""
 This app predicts the likelihood of distant metastasis in colorectal cancer based on input features:
@@ -41,40 +42,50 @@ This app predicts the likelihood of distant metastasis in colorectal cancer base
 Input the relevant feature values to obtain predictions and probability estimates regarding the risk of distant metastasis.
 """)
 
+# Create layout with two columns (one for input and one for the result)
+col1, col2 = st.columns([2, 1])
+
 # Sidebar for user input
 with st.sidebar:
-    st.header("Enter Feature Values")
+    st.header("Input Feature Values")
 
-    # Get user inputs
-    primary_site = st.selectbox("Primary Site", list(encoded_features['Primary Site'].values()))
-    grade = st.selectbox("Grade", list(encoded_features['Grade'].values()))
-    t_stage = st.selectbox("T Stage", list(encoded_features['T Stage'].values()))
-    n_stage = st.selectbox("N Stage", list(encoded_features['N Stage'].values()))
-    surgery = st.selectbox("Surgery", list(encoded_features['Surgery'].values()))
-    chemotherapy = st.selectbox("Chemotherapy", list(encoded_features['Chemotherapy'].values()))
-    cea = st.selectbox("CEA", list(encoded_features['CEA'].values()))
-    tumor_deposits = st.selectbox("Tumor Deposits", list(encoded_features['Tumor Deposits'].values()))
+    # Input fields for each feature
+    primary_site = st.selectbox('Primary Site', list(encoded_features['Primary Site'].keys()))
+    grade = st.selectbox('Grade', list(encoded_features['Grade'].keys()))
+    t_stage = st.selectbox('T Stage', list(encoded_features['T Stage'].keys()))
+    n_stage = st.selectbox('N Stage', list(encoded_features['N Stage'].keys()))
+    surgery = st.selectbox('Surgery', list(encoded_features['Surgery'].keys()))
+    chemotherapy = st.selectbox('Chemotherapy', list(encoded_features['Chemotherapy'].keys()))
+    cea = st.selectbox('CEA', list(encoded_features['CEA'].keys()))
+    tumor_deposits = st.selectbox('Tumor Deposits', list(encoded_features['Tumor Deposits'].keys()))
 
-    # Convert the input features into the corresponding encoding values
-    feature_values = {
-        'Primary Site': list(encoded_features['Primary Site'].keys())[list(encoded_features['Primary Site'].values()).index(primary_site)],
-        'Grade': list(encoded_features['Grade'].keys())[list(encoded_features['Grade'].values()).index(grade)],
-        'T Stage': list(encoded_features['T Stage'].keys())[list(encoded_features['T Stage'].values()).index(t_stage)],
-        'N Stage': list(encoded_features['N Stage'].keys())[list(encoded_features['N Stage'].values()).index(n_stage)],
-        'Surgery': list(encoded_features['Surgery'].keys())[list(encoded_features['Surgery'].values()).index(surgery)],
-        'Chemotherapy': list(encoded_features['Chemotherapy'].keys())[list(encoded_features['Chemotherapy'].values()).index(chemotherapy)],
-        'CEA': list(encoded_features['CEA'].keys())[list(encoded_features['CEA'].values()).index(cea)],
-        'Tumor Deposits': list(encoded_features['Tumor Deposits'].keys())[list(encoded_features['Tumor Deposits'].values()).index(tumor_deposits)],
-    }
+# Define input features as a DataFrame
+input_data = pd.DataFrame([[primary_site, grade, t_stage, n_stage, surgery, chemotherapy, cea, tumor_deposits]],
+                          columns=['Primary Site', 'Grade', 'T Stage', 'N Stage', 'Surgery', 'Chemotherapy', 'CEA', 'Tumor Deposits'])
 
-    # Convert to dataframe (assuming the model accepts a 1xN feature vector)
-    input_df = pd.DataFrame([feature_values])
+# Mapping categorical inputs to numerical values
+input_data['Primary Site'] = input_data['Primary Site'].map(encoded_features['Primary Site'])
+input_data['Grade'] = input_data['Grade'].map(encoded_features['Grade'])
+input_data['T Stage'] = input_data['T Stage'].map(encoded_features['T Stage'])
+input_data['N Stage'] = input_data['N Stage'].map(encoded_features['N Stage'])
+input_data['Surgery'] = input_data['Surgery'].map(encoded_features['Surgery'])
+input_data['Chemotherapy'] = input_data['Chemotherapy'].map(encoded_features['Chemotherapy'])
+input_data['CEA'] = input_data['CEA'].map(encoded_features['CEA'])
+input_data['Tumor Deposits'] = input_data['Tumor Deposits'].map(encoded_features['Tumor Deposits'])
 
-    # Predict probability of distant metastasis
-    if st.button('Predict'):
-        # Model prediction
-        prob = GradientBoosting.predict_proba(input_df)[:, 1]  # Get probability for the positive class (1)
-        
-        # Display result
-        st.subheader("Probability of Distant Metastasis")
-        st.write(f"The probability of distant metastasis is: {prob[0]:.2f}")
+# Prediction button
+with col1:
+    st.subheader("Enter Feature Values and Predict")
+    predict_button = st.button("Predict")
+
+# Prediction logic
+if predict_button:
+    # Use the model to predict the probability of distant metastasis
+    probability = GradientBoosting.predict_proba(input_data)[:, 1]  # Get probability for the positive class (metastasis)
+
+    # Display the result in the second column
+    with col2:
+        st.subheader("Probability of Distant Metastasis:")
+        st.write(f"The probability of distant metastasis is **{probability[0]:.4f}**")
+
+
