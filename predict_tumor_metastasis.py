@@ -42,42 +42,48 @@ This app predicts the likelihood of distant metastasis in colorectal cancer base
 Input the relevant feature values to obtain predictions and probability estimates regarding the risk of distant metastasis.
 """)
 
-# Sidebar for user input
-with st.sidebar:
-    st.header("Enter Feature Values")
+# Adjusting layout to have symmetrical columns
+col1, col2 = st.columns([1, 1])
+
+with col1:
+    # Sidebar for user input on the left side
+    st.sidebar.header("Input Features")
 
     # Get user inputs
-    primary_site = st.selectbox("Primary Site", list(encoded_features['Primary Site'].values()))
-    grade = st.selectbox("Grade", list(encoded_features['Grade'].values()))
-    t_stage = st.selectbox("T Stage", list(encoded_features['T Stage'].values()))
-    n_stage = st.selectbox("N Stage", list(encoded_features['N Stage'].values()))
-    surgery = st.selectbox("Surgery", list(encoded_features['Surgery'].values()))
-    chemotherapy = st.selectbox("Chemotherapy", list(encoded_features['Chemotherapy'].values()))
-    cea = st.selectbox("CEA", list(encoded_features['CEA'].values()))
-    tumor_deposits = st.selectbox("Tumor Deposits", list(encoded_features['Tumor Deposits'].values()))
+    primary_site = st.sidebar.selectbox("Primary Site", list(encoded_features['Primary Site'].keys()))
+    grade = st.sidebar.selectbox("Grade", list(encoded_features['Grade'].keys()))
+    t_stage = st.sidebar.selectbox("T Stage", list(encoded_features['T Stage'].keys()))
+    n_stage = st.sidebar.selectbox("N Stage", list(encoded_features['N Stage'].keys()))
+    surgery = st.sidebar.selectbox("Surgery", list(encoded_features['Surgery'].keys()))
+    chemotherapy = st.sidebar.selectbox("Chemotherapy", list(encoded_features['Chemotherapy'].keys()))
+    cea = st.sidebar.selectbox("CEA", list(encoded_features['CEA'].keys()))
+    tumor_deposits = st.sidebar.selectbox("Tumor Deposits", list(encoded_features['Tumor Deposits'].keys()))
 
-    # Convert the input features into the corresponding encoding values
-    feature_values = {
-        'Primary Site': list(encoded_features['Primary Site'].keys())[list(encoded_features['Primary Site'].values()).index(primary_site)],
-        'Grade': list(encoded_features['Grade'].keys())[list(encoded_features['Grade'].values()).index(grade)],
-        'T Stage': list(encoded_features['T Stage'].keys())[list(encoded_features['T Stage'].values()).index(t_stage)],
-        'N Stage': list(encoded_features['N Stage'].keys())[list(encoded_features['N Stage'].values()).index(n_stage)],
-        'Surgery': list(encoded_features['Surgery'].keys())[list(encoded_features['Surgery'].values()).index(surgery)],
-        'Chemotherapy': list(encoded_features['Chemotherapy'].keys())[list(encoded_features['Chemotherapy'].values()).index(chemotherapy)],
-        'CEA': list(encoded_features['CEA'].keys())[list(encoded_features['CEA'].values()).index(cea)],
-        'Tumor Deposits': list(encoded_features['Tumor Deposits'].keys())[list(encoded_features['Tumor Deposits'].values()).index(tumor_deposits)],
-    }
+with col2:
+    # Title and button
+    st.subheader("Input Data to Predict")
+    st.write("""
+    Enter the relevant features in the sidebar to predict the likelihood of distant metastasis.
+    Click the "Predict" button to get the result.
+    """)
 
-    # Convert to dataframe (assuming the model accepts a 1xN feature vector)
-    input_df = pd.DataFrame([feature_values])
+# When user clicks on "Predict", the model will process the inputs
+if st.button("Predict"):
+    # Prepare input data for prediction
+    input_data = np.array([[primary_site, grade, t_stage, n_stage, surgery, chemotherapy, cea, tumor_deposits]])
+    
+    # Ensure correct shape and encode the input data according to the encoding dictionary
+    input_data_encoded = []
+    for feature_name, feature_values in encoded_features.items():
+        feature_value = locals()[feature_name.lower()]
+        input_data_encoded.append(feature_values[feature_value])
+    
+    input_data_encoded = np.array(input_data_encoded).reshape(1, -1)
 
-    # Predict probability of distant metastasis
-    if st.button('Predict'):
-        # Model prediction
-        prob = GradientBoosting.predict_proba(input_df)[:, 1]  # Get probability for the positive class (1)
-        
-        # Display result
-        st.subheader("Probability of Distant Metastasis")
-        st.write(f"The probability of distant metastasis is: {prob[0]:.2f}")
+    # Make prediction using the loaded model
+    probability = GradientBoosting.predict_proba(input_data_encoded)[0][1]  # Probability of distant metastasis (class 1)
+
+    # Show the probability
+    st.write(f"### Probability of Distant Metastasis: {probability:.4f}")
 
 
