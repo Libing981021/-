@@ -8,7 +8,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 # Allow loading high resolution images
 Image.MAX_IMAGE_PIXELS = None
 
-# Load the models
+# Load the model
 GradientBoosting = joblib.load('best_gb_model.pk3')  # Replace with the correct model path
 
 # Encoding dictionary for features
@@ -25,6 +25,7 @@ encoded_features = {
     'Tumor Deposits': {0: 'Unknown', 1: 'No', 2: 'Yes'},
 }
 
+# Streamlit UI
 # Title and description
 st.title("Predicting Distant Metastasis in Colorectal Cancer Using a Machine Learning Model")
 st.write("""
@@ -41,38 +42,42 @@ This app predicts the likelihood of distant metastasis in colorectal cancer base
 Input the relevant feature values to obtain predictions and probability estimates regarding the risk of distant metastasis.
 """)
 
-# User input for features
-primary_site = st.selectbox("Primary Site", list(encoded_features['Primary Site'].values()))
-grade = st.selectbox("Grade", list(encoded_features['Grade'].values()))
-t_stage = st.selectbox("T Stage", list(encoded_features['T Stage'].values()))
-n_stage = st.selectbox("N Stage", list(encoded_features['N Stage'].values()))
-surgery = st.selectbox("Surgery", list(encoded_features['Surgery'].values()))
-chemotherapy = st.selectbox("Chemotherapy", list(encoded_features['Chemotherapy'].values()))
-cea = st.selectbox("CEA", list(encoded_features['CEA'].values()))
-tumor_deposits = st.selectbox("Tumor Deposits", list(encoded_features['Tumor Deposits'].values()))
+# Sidebar for user input
+with st.sidebar:
+    st.header("Enter Feature Values")
 
-# Prepare input data for prediction
-input_data = {
-    'Primary Site': list(encoded_features['Primary Site'].keys())[list(encoded_features['Primary Site'].values()).index(primary_site)],
-    'Grade': list(encoded_features['Grade'].keys())[list(encoded_features['Grade'].values()).index(grade)],
-    'T Stage': list(encoded_features['T Stage'].keys())[list(encoded_features['T Stage'].values()).index(t_stage)],
-    'N Stage': list(encoded_features['N Stage'].keys())[list(encoded_features['N Stage'].values()).index(n_stage)],
-    'Surgery': list(encoded_features['Surgery'].keys())[list(encoded_features['Surgery'].values()).index(surgery)],
-    'Chemotherapy': list(encoded_features['Chemotherapy'].keys())[list(encoded_features['Chemotherapy'].values()).index(chemotherapy)],
-    'CEA': list(encoded_features['CEA'].keys())[list(encoded_features['CEA'].values()).index(cea)],
-    'Tumor Deposits': list(encoded_features['Tumor Deposits'].keys())[list(encoded_features['Tumor Deposits'].values()).index(tumor_deposits)],
-}
+    # Get user inputs
+    primary_site = st.selectbox("Primary Site", list(encoded_features['Primary Site'].values()))
+    grade = st.selectbox("Grade", list(encoded_features['Grade'].values()))
+    t_stage = st.selectbox("T Stage", list(encoded_features['T Stage'].values()))
+    n_stage = st.selectbox("N Stage", list(encoded_features['N Stage'].values()))
+    surgery = st.selectbox("Surgery", list(encoded_features['Surgery'].values()))
+    chemotherapy = st.selectbox("Chemotherapy", list(encoded_features['Chemotherapy'].values()))
+    cea = st.selectbox("CEA", list(encoded_features['CEA'].values()))
+    tumor_deposits = st.selectbox("Tumor Deposits", list(encoded_features['Tumor Deposits'].values()))
 
-# Convert to a DataFrame for prediction
-input_df = pd.DataFrame([input_data])
+    # Convert the input features into the corresponding encoding values
+    feature_values = {
+        'Primary Site': list(encoded_features['Primary Site'].keys())[list(encoded_features['Primary Site'].values()).index(primary_site)],
+        'Grade': list(encoded_features['Grade'].keys())[list(encoded_features['Grade'].values()).index(grade)],
+        'T Stage': list(encoded_features['T Stage'].keys())[list(encoded_features['T Stage'].values()).index(t_stage)],
+        'N Stage': list(encoded_features['N Stage'].keys())[list(encoded_features['N Stage'].values()).index(n_stage)],
+        'Surgery': list(encoded_features['Surgery'].keys())[list(encoded_features['Surgery'].values()).index(surgery)],
+        'Chemotherapy': list(encoded_features['Chemotherapy'].keys())[list(encoded_features['Chemotherapy'].values()).index(chemotherapy)],
+        'CEA': list(encoded_features['CEA'].keys())[list(encoded_features['CEA'].values()).index(cea)],
+        'Tumor Deposits': list(encoded_features['Tumor Deposits'].keys())[list(encoded_features['Tumor Deposits'].values()).index(tumor_deposits)],
+    }
 
-# Make prediction using the loaded model
-prediction_proba = GradientBoosting.predict_proba(input_df)  # Get probabilities for both classes
-predicted_class = GradientBoosting.predict(input_df)  # Get the predicted class
+    # Convert to dataframe (assuming the model accepts a 1xN feature vector)
+    input_df = pd.DataFrame([feature_values])
 
-# Display results
-if st.button("Predict"):
-    st.write(f"Predicted Class: {predicted_class[0]}")
-    st.write(f"Probability of No Metastasis: {prediction_proba[0][0]:.2f}")
-    st.write(f"Probability of Distant Metastasis: {prediction_proba[0][1]:.2f}")
+    # Predict probability of distant metastasis
+    if st.button('Predict'):
+        # Model prediction
+        prob = GradientBoosting.predict_proba(input_df)[:, 1]  # Get probability for the positive class (1)
+        
+        # Display result
+        st.subheader("Probability of Distant Metastasis")
+        st.write(f"The probability of distant metastasis is: {prob[0]:.2f}")
+
 
